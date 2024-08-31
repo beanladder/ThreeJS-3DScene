@@ -18,22 +18,25 @@ function init() {
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x808080, 1); // Set background to grey
+    renderer.setClearColor(0x020308, 1); // Set background to dark blue for night sky
+    renderer.toneMapping = THREE.ReinhardToneMapping;
+    renderer.toneMappingExposure = 1;
     document.body.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enablePan = false;
     controls.enableZoom = true;
-    controls.maxPolarAngle = Math.PI / 2 - 0.1; // Prevent camera from going below the plane
+    controls.maxPolarAngle = Math.PI / 2 - 0.1;
 
     composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(scene, camera));
+    const renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
 
     const bloomPass = new UnrealBloomPass(
         new THREE.Vector2(window.innerWidth, window.innerHeight),
-        1.5, // Bloom intensity
-        1.0, // Bloom radius
-        0.85  // Bloom threshold
+        2.5, // Bloom intensity
+        0.8, // Bloom radius
+        0.9  // Bloom threshold
     );
     composer.addPass(bloomPass);
 
@@ -42,7 +45,6 @@ function init() {
 
     document.addEventListener('mousemove', onMouseMove, false);
 
-    // Add randomize button
     const randomizeButton = document.createElement('button');
     randomizeButton.textContent = 'Randomize Terrain';
     randomizeButton.style.position = 'absolute';
@@ -65,7 +67,7 @@ function onMouseMove(event) {
         const intersectPoint = intersects[0].point;
         sphere.position.x = intersectPoint.x;
         sphere.position.z = intersectPoint.z;
-        sphere.position.y = intersectPoint.y + 1.0; // Keep the sphere slightly above the terrain
+        sphere.position.y = intersectPoint.y + 4; // Keep the sphere slightly higher
     }
 }
 
