@@ -17,7 +17,7 @@ export function createScene() {
     scene.add(ambientLight);
 
     // Plane (more detailed)
-    const planeGeometry = new THREE.PlaneGeometry(40, 40, 20, 20);
+    const planeGeometry = new THREE.PlaneGeometry(40, 40, 5, 5);
     const planeMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x1a4d1a,
         roughness: 0.8,
@@ -32,7 +32,7 @@ export function createScene() {
     function randomizeTerrain() {
         const positions = planeGeometry.attributes.position.array;
         for (let i = 0; i < positions.length; i += 3) {
-            positions[i + 2] = Math.random() * 1 - 1; // Random height between -1 and 1
+            positions[i + 2] = Math.random() * 1.2 - 1; // Random height between -1 and 1
         }
         planeGeometry.attributes.position.needsUpdate = true;
         planeGeometry.computeVertexNormals();
