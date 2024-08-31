@@ -5,75 +5,56 @@ export function createScene() {
 
     // Camera
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 5, 10);
+    camera.position.set(0, 8, 15);
 
-    // Directional Light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 5, 5);
+    // Directional Light (main light source)
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    directionalLight.position.set(5, 10, 5);
     scene.add(directionalLight);
 
-    // Plane
-    const planeGeometry = new THREE.PlaneGeometry(10, 10);
-    const planeMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+    // Ambient Light (to soften shadows)
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.7);
+    scene.add(ambientLight);
+
+    // Plane (more detailed)
+    const planeGeometry = new THREE.PlaneGeometry(40, 40, 20, 20);
+    const planeMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x1a4d1a,
+        roughness: 0.8,
+        metalness: 0.2,
+        wireframe: false
+    });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
     plane.rotation.x = -Math.PI / 2;
     scene.add(plane);
 
-    // Sphere with custom shader
-    const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
-    const sphereMaterial = new THREE.ShaderMaterial({
-        uniforms: {
-            lightPosition: { value: new THREE.Vector3(5, 5, 5) },
-            glowColor: { value: new THREE.Color(1.0, 0.8, 0.0) },
-            intensity: { value: 1.0 },
-            power: { value: 2.0 }
-        },
-        vertexShader: `
-            varying vec3 vNormal;
-            varying vec3 vWorldPosition;
+    // Function to randomize terrain
+    function randomizeTerrain() {
+        const positions = planeGeometry.attributes.position.array;
+        for (let i = 0; i < positions.length; i += 3) {
+            positions[i + 2] = Math.random() * 1 - 1; // Random height between -1 and 1
+        }
+        planeGeometry.attributes.position.needsUpdate = true;
+        planeGeometry.computeVertexNormals();
+    }
 
-            void main() {
-                vNormal = normalize(normalMatrix * normal);
-                vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-                vWorldPosition = worldPosition.xyz;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `,
-        fragmentShader: `
-            uniform vec3 lightPosition;
-            uniform vec3 glowColor;
-            uniform float intensity;
-            uniform float power;
+    // Initial randomization
+    randomizeTerrain();
 
-            varying vec3 vNormal;
-            varying vec3 vWorldPosition;
-
-            void main() {
-                vec3 viewDirection = normalize(cameraPosition - vWorldPosition);
-                vec3 lightDirection = normalize(lightPosition - vWorldPosition);
-                
-                vec3 ambient = vec3(0.1, 0.1, 0.1);
-                
-                float diff = max(dot(vNormal, lightDirection), 0.0);
-                vec3 diffuse = diff * vec3(1.0, 0.9, 0.7);
-                
-                vec3 halfwayDir = normalize(lightDirection + viewDirection);
-                float spec = pow(max(dot(vNormal, halfwayDir), 0.0), 32.0);
-                vec3 specular = spec * vec3(1.0, 1.0, 1.0);
-                
-                float fresnel = pow(1.0 - dot(viewDirection, vNormal), power);
-                vec3 glow = glowColor * intensity * fresnel;
-                
-                vec3 baseColor = vec3(1.0, 0.8, 0.0);
-                vec3 final = baseColor * (ambient + diffuse) + specular + glow;
-                
-                gl_FragColor = vec4(final, 1.0);
-            }
-        `
+    // Glowing Sphere
+    const sphereGeometry = new THREE.SphereGeometry(0.7, 32, 32);
+    const sphereMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffa0,  // Slightly yellow-tinted white
+        transparent: true,
+        opacity: 0.9
     });
     const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-    sphere.position.y = 1;
+    sphere.position.y = 0.7;
     scene.add(sphere);
 
-    return { scene, camera };
+    // Point Light (attached to the sphere)
+    const pointLight = new THREE.PointLight(0xffffa0, 10, 20);
+    sphere.add(pointLight);
+
+    return { scene, camera, sphere, plane, pointLight, randomizeTerrain };
 }
