@@ -39,21 +39,46 @@ export function createScene() {
         }
         planeGeometry.attributes.position.needsUpdate = true;
         planeGeometry.computeVertexNormals();
-        createGrass();
+        createGrass(camera);
     }
 
     // Create Grass
-    function createGrass() {
-        const grassCount = 200000;
+    function createGrass(camera) {
+        const grassCount = 100000;
         const grassHeight = 1;
-        const grassWidth = 0.1;
+        const grassWidthBase = 0.1;
+        const grassWidthTop = 0.02; // Make the tip thinner
+        
+        // Load the textures you provided
+        const loader = new THREE.TextureLoader();
+        const grassDiffuseTexture = loader.load('./grass_diffuse.jpg'); // Update the path if necessary
+        
+        // Create plane geometry for grass blade
+        const grassGeometry = new THREE.PlaneGeometry(grassWidthBase, grassHeight, 1, 1);
+        
+        // Modify the vertices to taper the grass towards the top
+        const position = grassGeometry.attributes.position;
+        for (let i = 0; i < position.count; i++) {
+            const y = position.getY(i);
+            const ratio = y / grassHeight; // Determine how far up the blade we are (0 at base, 1 at tip)
+            const width = grassWidthBase * (1 - ratio) + grassWidthTop * ratio; // Linear interpolation from base to tip
+            
+            const x = position.getX(i);
+            position.setX(i, x * (width / grassWidthBase)); // Scale X based on the interpolated width
+        }
     
-        const grassGeometry = new THREE.PlaneGeometry(grassWidth, grassHeight);
+        position.needsUpdate = true;
         grassGeometry.translate(0, grassHeight / 2, 0); // Pivot at base
+    
         const grassMaterial = new THREE.MeshStandardMaterial({
-            color: 0x0c210c,
+            map: grassDiffuseTexture, // Use the provided diffuse texture
             side: THREE.DoubleSide,
-            alphaTest: 0.5
+            alphaTest: 0.5,
+            roughness: 1.0,
+            metalness: 0.0,
+            flatShading: true,
+            emissive: new THREE.Color(0x0c210c),
+            emissiveIntensity: 0.3
         });
     
         const grassMesh = new THREE.InstancedMesh(grassGeometry, grassMaterial, grassCount);
@@ -74,6 +99,14 @@ export function createScene() {
                 dummy.position.set(x, y, z);
                 dummy.rotation.y = Math.random() * Math.PI; // Random rotation
                 dummy.scale.setScalar(0.8 + Math.random() * 0.4); // Random scale for variety
+                
+                // Update matrix and compute direction to face camera
+                const direction = new THREE.Vector3().subVectors(camera.position, dummy.position).normalize();
+                const up = new THREE.Vector3(0, 1, 0); // Up direction for the blade
+                const axis = new THREE.Vector3().crossVectors(up, direction).normalize();
+                const angle = Math.acos(up.dot(direction));
+                dummy.lookAt(camera.position); // Rotate to face the camera
+                
                 dummy.updateMatrix();
                 grassMesh.setMatrixAt(i, dummy.matrix);
             }
@@ -82,6 +115,9 @@ export function createScene() {
         grassMesh.instanceMatrix.needsUpdate = true;
         scene.add(grassMesh);
     }
+    
+    
+    
 
     // Initial randomization and add grass
     //randomizeTerrain();
