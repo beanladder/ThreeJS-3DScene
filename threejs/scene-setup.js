@@ -35,14 +35,57 @@ export function createScene() {
     function randomizeTerrain() {
         const positions = planeGeometry.attributes.position.array;
         for (let i = 0; i < positions.length; i += 3) {
-            positions[i + 2] = Math.random() * 2 - 1; // Increased range from 1.2 to 2
+            positions[i + 2] = Math.random() * 3 - 1; // Increased range from 1.2 to 2
         }
         planeGeometry.attributes.position.needsUpdate = true;
         planeGeometry.computeVertexNormals();
+        createGrass();
     }
 
-    // Initial randomization
-    randomizeTerrain();
+    // Create Grass
+    function createGrass() {
+        const grassCount = 200000;
+        const grassHeight = 1;
+        const grassWidth = 0.1;
+    
+        const grassGeometry = new THREE.PlaneGeometry(grassWidth, grassHeight);
+        grassGeometry.translate(0, grassHeight / 2, 0); // Pivot at base
+        const grassMaterial = new THREE.MeshStandardMaterial({
+            color: 0x0c210c,
+            side: THREE.DoubleSide,
+            alphaTest: 0.5
+        });
+    
+        const grassMesh = new THREE.InstancedMesh(grassGeometry, grassMaterial, grassCount);
+        const dummy = new THREE.Object3D();
+        const raycaster = new THREE.Raycaster();
+    
+        for (let i = 0; i < grassCount; i++) {
+            const x = Math.random() * 100 - 50;
+            const z = Math.random() * 100 - 50;
+    
+            // Use raycaster to find the y position on the terrain
+            raycaster.set(new THREE.Vector3(x, 100, z), new THREE.Vector3(0, -1, 0));
+            const intersects = raycaster.intersectObject(plane);
+    
+            if (intersects.length > 0) {
+                const y = intersects[0].point.y;
+    
+                dummy.position.set(x, y, z);
+                dummy.rotation.y = Math.random() * Math.PI; // Random rotation
+                dummy.scale.setScalar(0.8 + Math.random() * 0.4); // Random scale for variety
+                dummy.updateMatrix();
+                grassMesh.setMatrixAt(i, dummy.matrix);
+            }
+        }
+    
+        grassMesh.instanceMatrix.needsUpdate = true;
+        scene.add(grassMesh);
+    }
+
+    // Initial randomization and add grass
+    //randomizeTerrain();
+    
 
     // Glowing Sphere
     const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
