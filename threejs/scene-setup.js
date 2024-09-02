@@ -57,9 +57,9 @@ export function createScene() {
     // Create Grass
     function createGrass(camera) {
         const grassCount = 80000; // Reduced count for performance during testing
-        const grassHeight = 1;
-        const grassWidthBase = 0.15;
-        const grassWidthTop = 0.0015;
+        const grassHeight = 1.35;
+        const grassWidthBase = 0.2;
+        const grassWidthTop = 0.002;
     
         // Load the textures
         const loader = new THREE.TextureLoader();
