@@ -8,16 +8,24 @@ export function createScene() {
     camera.position.set(0, 8, 15);
 
     // Moon light
-    const moonLight1 = new THREE.DirectionalLight(0x4d79ff, 6.0);
+    const moonLight1 = new THREE.DirectionalLight(0x4d79ff, 4.0);
     moonLight1.position.set(5, 10, 5);
     scene.add(moonLight1);
 
-    const moonLight2 = new THREE.DirectionalLight(0x4d79ff, 6.0);
+    const moonLight2 = new THREE.DirectionalLight(0x4d79ff, 4.0);
     moonLight2.position.set(-5, 10, -5);
     scene.add(moonLight2);
 
+    const moonLight3 = new THREE.DirectionalLight(0x4d79ff, 4.0);
+    moonLight3.position.set(5, 10, -5);
+    scene.add(moonLight3);
+
+    const moonLight4 = new THREE.DirectionalLight(0x4d79ff, 4.0);
+    moonLight4.position.set(5, 10, -5);
+    scene.add(moonLight4);
+
     // Ambient Light
-    const ambientLight = new THREE.AmbientLight(0x111122, 0.3);
+    const ambientLight = new THREE.AmbientLight(0x111122, 0.5);
     scene.add(ambientLight);
 
     // Fog
@@ -130,7 +138,7 @@ export function createScene() {
     scene.add(sphere);
 
     // Point Light (attached to the sphere, for glow)
-    const pointLight = new THREE.PointLight(0xffff80, 160, 40000);
+    const pointLight = new THREE.PointLight(0xffff80, 50, 40000);
     sphere.add(pointLight);
 
     // Add stars with glow and circular effect
