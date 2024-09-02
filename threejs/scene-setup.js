@@ -7,35 +7,39 @@ export function createScene() {
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 8, 15);
 
-    // Moon light (increased intensity)
-    const moonLight = new THREE.DirectionalLight(0x4d79ff, 6.0); // Increased from 0.5 to 1.0
-    moonLight.position.set(5, 10, 5);
-    scene.add(moonLight);
+    // Moon light
+    const moonLight1 = new THREE.DirectionalLight(0x4d79ff, 6.0);
+    moonLight1.position.set(5, 10, 5);
+    scene.add(moonLight1);
 
-    // Ambient Light (slightly increased for better visibility)
-    const ambientLight = new THREE.AmbientLight(0x111122, 0.3); // Increased from 0.2 to 0.3
+    const moonLight2 = new THREE.DirectionalLight(0x4d79ff, 6.0);
+    moonLight2.position.set(-5, 10, -5);
+    scene.add(moonLight2);
+
+    // Ambient Light
+    const ambientLight = new THREE.AmbientLight(0x111122, 0.3);
     scene.add(ambientLight);
 
-    // Fog (adjusted for better star visibility)
-    scene.fog = new THREE.Fog(0x001133, 30, 500); // Increased far value from 60 to 100
+    // Fog
+    scene.fog = new THREE.Fog(0x001133, 30, 500);
 
-    // Plane (more detailed and darker for night)
-    const planeGeometry = new THREE.PlaneGeometry(100, 100, 5, 5); // Increased detail
+    // Plane
+    const planeGeometry = new THREE.PlaneGeometry(100, 100, 5, 5);
     const planeMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x0c210c,
-        roughness: 0.8,
-        metalness: 0.2,
+        color: 0x047300,
+        roughness: 0.9,
+        metalness: 0.1,
         wireframe: false
     });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
     plane.rotation.x = -Math.PI / 2;
     scene.add(plane);
 
-    // Function to randomize terrain (more pronounced for interesting night shadows)
+    // Function to randomize terrain
     function randomizeTerrain() {
         const positions = planeGeometry.attributes.position.array;
         for (let i = 0; i < positions.length; i += 3) {
-            positions[i + 2] = Math.random() * 3 - 1; // Increased range from 1.2 to 2
+            positions[i + 2] = Math.random() * 3 - 1;
         }
         planeGeometry.attributes.position.needsUpdate = true;
         planeGeometry.computeVertexNormals();
@@ -47,8 +51,8 @@ export function createScene() {
         const grassCount = 100000;
         const grassHeight = 1;
         const grassWidthBase = 0.1;
-        const grassWidthTop = 0.02; // Make the tip thinner
-        
+        const grassWidthTop = 0.02;
+
         // Load the textures you provided
         const loader = new THREE.TextureLoader();
         const grassDiffuseTexture = loader.load('./grass_diffuse.jpg'); // Update the path if necessary
@@ -60,18 +64,18 @@ export function createScene() {
         const position = grassGeometry.attributes.position;
         for (let i = 0; i < position.count; i++) {
             const y = position.getY(i);
-            const ratio = y / grassHeight; // Determine how far up the blade we are (0 at base, 1 at tip)
-            const width = grassWidthBase * (1 - ratio) + grassWidthTop * ratio; // Linear interpolation from base to tip
+            const ratio = y / grassHeight;
+            const width = grassWidthBase * (1 - ratio) + grassWidthTop * ratio;
             
             const x = position.getX(i);
-            position.setX(i, x * (width / grassWidthBase)); // Scale X based on the interpolated width
+            position.setX(i, x * (width / grassWidthBase));
         }
     
         position.needsUpdate = true;
-        grassGeometry.translate(0, grassHeight / 2, 0); // Pivot at base
+        grassGeometry.translate(0, grassHeight / 2, 0);
     
         const grassMaterial = new THREE.MeshStandardMaterial({
-            map: grassDiffuseTexture, // Use the provided diffuse texture
+            map: grassDiffuseTexture,
             side: THREE.DoubleSide,
             alphaTest: 0.5,
             roughness: 1.0,
@@ -82,6 +86,8 @@ export function createScene() {
         });
     
         const grassMesh = new THREE.InstancedMesh(grassGeometry, grassMaterial, grassCount);
+        grassMesh.name = 'grassMesh'; // Naming the grass mesh
+
         const dummy = new THREE.Object3D();
         const raycaster = new THREE.Raycaster();
     
@@ -97,15 +103,8 @@ export function createScene() {
                 const y = intersects[0].point.y;
     
                 dummy.position.set(x, y, z);
-                dummy.rotation.y = Math.random() * Math.PI; // Random rotation
-                dummy.scale.setScalar(0.8 + Math.random() * 0.4); // Random scale for variety
-                
-                // Update matrix and compute direction to face camera
-                const direction = new THREE.Vector3().subVectors(camera.position, dummy.position).normalize();
-                const up = new THREE.Vector3(0, 1, 0); // Up direction for the blade
-                const axis = new THREE.Vector3().crossVectors(up, direction).normalize();
-                const angle = Math.acos(up.dot(direction));
-                dummy.lookAt(camera.position); // Rotate to face the camera
+                dummy.rotation.y = Math.random() * Math.PI;
+                dummy.scale.setScalar(0.8 + Math.random() * 0.4);
                 
                 dummy.updateMatrix();
                 grassMesh.setMatrixAt(i, dummy.matrix);
@@ -115,14 +114,10 @@ export function createScene() {
         grassMesh.instanceMatrix.needsUpdate = true;
         scene.add(grassMesh);
     }
-    
-    
-    
 
     // Initial randomization and add grass
     //randomizeTerrain();
     
-
     // Glowing Sphere
     const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
     const sphereMaterial = new THREE.MeshBasicMaterial({
@@ -143,12 +138,12 @@ export function createScene() {
     const starGeometry = new THREE.BufferGeometry();
     const starMaterial = new THREE.PointsMaterial({
         color: 0xffffff,
-        size: 0.6, // Slightly increased size
+        size: 0.6,
         transparent: true,
-        opacity: 0.9, // Increased opacity
+        opacity: 0.9,
         map: createStarTexture(),
         blending: THREE.AdditiveBlending,
-        depthWrite: false // Ensures stars are always visible
+        depthWrite: false
     });
 
     const starVertices = [];
@@ -156,7 +151,7 @@ export function createScene() {
     for (let i = 0; i < starCount; i++) {
         const theta = Math.random() * Math.PI * 2;
         const phi = Math.acos(Math.random() * 2 - 1);
-        const radius = Math.random() * 50 + 100; // Increased distance: stars between 100 and 150 units away
+        const radius = Math.random() * 50 + 100;
 
         const x = radius * Math.sin(phi) * Math.cos(theta);
         const y = radius * Math.sin(phi) * Math.sin(theta);

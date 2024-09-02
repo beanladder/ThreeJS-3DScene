@@ -74,7 +74,27 @@ function onMouseMove(event) {
 
 function animate() {
     requestAnimationFrame(animate);
+    updateGrassOrientation();
     composer.render();
+}
+function updateGrassOrientation() {
+    const grassMesh = scene.getObjectByName('grassMesh');
+    const dummy = new THREE.Object3D();
+
+    if (grassMesh) {
+        for (let i = 0; i < grassMesh.count; i++) {
+            grassMesh.getMatrixAt(i, dummy.matrix);
+            dummy.matrix.decompose(dummy.position, dummy.quaternion, dummy.scale);
+
+            // Make each grass blade face the camera
+            dummy.lookAt(camera.position);
+            dummy.updateMatrix();
+
+            grassMesh.setMatrixAt(i, dummy.matrix);
+        }
+
+        grassMesh.instanceMatrix.needsUpdate = true;
+    }
 }
 
 init();
