@@ -140,7 +140,7 @@ export function createScene() {
     scene.add(sphere);
 
     // Point Light (attached to the sphere, for glow)
-    const pointLight = new THREE.PointLight(0xffff80, 50, 40000);
+    const pointLight = new THREE.PointLight(0xffff80, 20, 40000);
     sphere.add(pointLight);
 
     // Add stars with glow and circular effect

@@ -8,6 +8,7 @@ import { createNoise2D } from 'simplex-noise';
 
 let scene, camera, renderer, composer, sphere, plane, pointLight, raycaster, mouse, randomizeTerrain;
 let noise2D;
+let windEffect; // New variable for wind effect
 
 function init() {
     const { scene: newScene, camera: newCamera, sphere: newSphere, plane: newPlane, pointLight: newPointLight, randomizeTerrain: newRandomizeTerrain } = createScene();
@@ -57,6 +58,9 @@ function init() {
 
     // Initialize noise generator
     noise2D = createNoise2D();
+
+    // Add wind effect
+    windEffect = addWindEffect(scene);
 
     animate();
 }
@@ -108,9 +112,65 @@ function animate() {
     requestAnimationFrame(animate);
     const time = performance.now();
     updateGrassOrientation(time);
+    windEffect.animateWind(); // Animate wind effect
     composer.render();
 }
 
+function addWindEffect(scene) {
+    const curvePoints = [
+        new THREE.Vector3(-25, 3, -25),
+        new THREE.Vector3(-15, 4, -5),
+        new THREE.Vector3(0, 5, 0),
+        new THREE.Vector3(15, 4, 5),
+        new THREE.Vector3(25, 3, 25)
+    ];
+    const curve = new THREE.CatmullRomCurve3(curvePoints);
+
+    const lineCount = 3; // Number of line segments
+    const lineLength = 20; // Length of each line segment
+    const lines = [];
+
+    for (let i = 0; i < lineCount; i++) {
+        const lineGeometry = new THREE.BufferGeometry();
+        const lineMaterial = new THREE.LineBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 1,
+            blending: THREE.AdditiveBlending
+        });
+        const line = new THREE.Line(lineGeometry, lineMaterial);
+        scene.add(line);
+        lines.push(line);
+    }
+
+    function animateWind() {
+        const time = Date.now() * 0.001;
+        const looptime = 10; // 10 seconds for a complete loop
+
+        lines.forEach((line, index) => {
+            const t = ((time + index * 0.5) % looptime) / looptime;
+            const startT = t;
+            const endT = (t + lineLength / 200) % 1; // 200 is the total number of points on the curve
+
+            const points = [];
+            for (let i = 0; i <= lineLength; i++) {
+                const segmentT = (startT + (endT - startT) * (i / lineLength)) % 1;
+                const point = curve.getPoint(segmentT);
+                point.y += Math.sin((segmentT + index * 0.1) * Math.PI * 2) * 0.5; // Add some vertical movement
+                points.push(point);
+            }
+
+            line.geometry.setFromPoints(points);
+            line.geometry.attributes.position.needsUpdate = true;
+
+            // Fade the line based on its position
+            const opacity = Math.sin(t * Math.PI) * 0.5 + 0.5;
+            line.material.opacity = opacity;
+        });
+    }
+
+    return { animateWind };
+}
 init();
 
 window.addEventListener('resize', onWindowResize, false);
