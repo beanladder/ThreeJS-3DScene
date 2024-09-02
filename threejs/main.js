@@ -4,9 +4,10 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { createScene } from './scene-setup.js';
-
+import { createNoise2D } from 'simplex-noise';
 
 let scene, camera, renderer, composer, sphere, plane, pointLight, raycaster, mouse, randomizeTerrain;
+let noise2D;
 
 function init() {
     const { scene: newScene, camera: newCamera, sphere: newSphere, plane: newPlane, pointLight: newPointLight, randomizeTerrain: newRandomizeTerrain } = createScene();
@@ -19,7 +20,7 @@ function init() {
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x020308, 1); // Set background to dark blue for night sky
+    renderer.setClearColor(0x020308, 1);
     renderer.toneMapping = THREE.ReinhardToneMapping;
     renderer.toneMappingExposure = 1;
     document.body.appendChild(renderer.domElement);
@@ -35,9 +36,9 @@ function init() {
 
     const bloomPass = new UnrealBloomPass(
         new THREE.Vector2(window.innerWidth, window.innerHeight),
-        2.5, // Bloom intensity
-        0.8, // Bloom radius
-        0.9  // Bloom threshold
+        2.5,
+        0.8,
+        0.9
     );
     composer.addPass(bloomPass);
 
@@ -54,6 +55,9 @@ function init() {
     randomizeButton.addEventListener('click', randomizeTerrain);
     document.body.appendChild(randomizeButton);
 
+    // Initialize noise generator
+    noise2D = createNoise2D();
+
     animate();
 }
 
@@ -68,16 +72,11 @@ function onMouseMove(event) {
         const intersectPoint = intersects[0].point;
         sphere.position.x = intersectPoint.x;
         sphere.position.z = intersectPoint.z;
-        sphere.position.y = intersectPoint.y + 4; // Keep the sphere slightly higher
+        sphere.position.y = intersectPoint.y + 3; // Keep the sphere slightly higher
     }
 }
 
-function animate() {
-    requestAnimationFrame(animate);
-    updateGrassOrientation();
-    composer.render();
-}
-function updateGrassOrientation() {
+function updateGrassOrientation(time) {
     const grassMesh = scene.getObjectByName('grassMesh');
     const dummy = new THREE.Object3D();
 
@@ -86,15 +85,30 @@ function updateGrassOrientation() {
             grassMesh.getMatrixAt(i, dummy.matrix);
             dummy.matrix.decompose(dummy.position, dummy.quaternion, dummy.scale);
 
-            // Make each grass blade face the camera
-            dummy.lookAt(camera.position);
-            dummy.updateMatrix();
+            // Generate noise based on position and time
+            const noiseX = noise2D(dummy.position.x * 0.1, time * 0.0005) * 0.2;
+            const noiseZ = noise2D(dummy.position.z * 0.1, time * 0.0005) * 0.2;
 
+            // Calculate the base rotation to face the camera
+            dummy.lookAt(camera.position);
+
+            // Apply additional rotation based on noise
+            dummy.rotateOnAxis(new THREE.Vector3(1, 0, 0), noiseX);
+            dummy.rotateOnAxis(new THREE.Vector3(0, 0, 1), noiseZ);
+
+            dummy.updateMatrix();
             grassMesh.setMatrixAt(i, dummy.matrix);
         }
 
         grassMesh.instanceMatrix.needsUpdate = true;
     }
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    const time = performance.now();
+    updateGrassOrientation(time);
+    composer.render();
 }
 
 init();
