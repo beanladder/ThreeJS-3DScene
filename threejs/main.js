@@ -23,6 +23,10 @@ function init() {
     pointLight = newPointLight;
     randomizeTerrain = newRandomizeTerrain;
 
+    // Set a good starting position for the camera
+    camera.position.set(0, 8, 15); // Adjust as needed
+    camera.lookAt(new THREE.Vector3(0, 0, 0)); // Ensure it's looking at the center of the scene
+
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(0x020308, 1);
@@ -33,7 +37,10 @@ function init() {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enablePan = false;
     controls.enableZoom = true;
-    controls.maxPolarAngle = Math.PI / 2 - 0.1;
+    controls.maxPolarAngle = Math.PI / 2 - 0.1; // Limit vertical movement
+    controls.minPolarAngle = Math.PI / 4; // Restrict from moving too close to the top
+    controls.minDistance = 10; // Minimum distance from the scene
+    controls.maxDistance = 80; // Maximum distance from the scene
 
     composer = new EffectComposer(renderer);
     const renderPass = new RenderPass(scene, camera);
@@ -70,30 +77,31 @@ function init() {
     windEffect = addWindEffect(scene);
 
     const loader = new GLTFLoader();
-loader.load(
-    './tree/scene.gltf', // Replace with the path to your model file
-    function (gltf) {
-        const model1 = gltf.scene.clone();
-        model1.position.set(9, 0.1, 9); // Set position for the first tree
-        model1.scale.set(0.05, 0.06, 0.05); // Scale model if necessary
-        model1.name = 'tree1'; // Give the first tree a unique name
-        scene.add(model1); // Add the first tree to the scene
+    loader.load(
+        './tree/scene.gltf', // Replace with the path to your model file
+        function (gltf) {
+            const model1 = gltf.scene.clone();
+            model1.position.set(9, 0.1, 9); // Set position for the first tree
+            model1.scale.set(0.05, 0.06, 0.05); // Scale model if necessary
+            model1.name = 'tree1'; // Give the first tree a unique name
+            scene.add(model1); // Add the first tree to the scene
 
-        const model2 = gltf.scene.clone();
-        model2.position.set(-11, 0.1, -9); // Set position for the second tree
-        model2.scale.set(0.05, 0.06, 0.05); // Scale model if necessary
-        model2.name = 'tree2'; // Give the second tree a unique name
-        scene.add(model2); // Add the second tree to the scene
-    },
-    undefined,
-    function (error) {
-        console.error('An error happened while loading the model:', error);
-    }
-);
-
+            const model2 = gltf.scene.clone();
+            model2.position.set(-11, 0.1, -9); // Set position for the second tree
+            model2.scale.set(0.05, 0.06, 0.05); // Scale model if necessary
+            model2.name = 'tree2'; // Give the second tree a unique name
+            scene.add(model2); // Add the second tree to the scene
+        },
+        undefined,
+        function (error) {
+            console.error('An error happened while loading the model:', error);
+        }
+    );
 
     animate();
 }
+
+
 
 function onMouseMove(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;

@@ -88,10 +88,17 @@ export function createScene() {
             },
             vertexShader: `
                 varying vec2 vUv;
+                varying vec3 vPosition;
+    
                 void main() {
-                    vUv = uv;
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
+                vUv = uv;
+                vPosition = position;
+                vec3 displacedPosition = position;
+                displacedPosition.y += sin(position.x * 10.0) * 0.05;
+                displacedPosition.z += cos(position.z * 10.0) * 0.05;
+    
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
+            }
             `,
             fragmentShader: `
                 uniform sampler2D diffuseMap;
