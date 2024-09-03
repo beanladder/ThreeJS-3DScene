@@ -45,18 +45,30 @@ export function createScene() {
 
     // Function to randomize terrain
     function randomizeTerrain() {
+        // Remove previous grass mesh if it exists
+        const previousGrassMesh = scene.getObjectByName('grassMesh');
+        if (previousGrassMesh) {
+            scene.remove(previousGrassMesh);
+            previousGrassMesh.geometry.dispose();
+            previousGrassMesh.material.dispose();
+        }
+    
+        // Randomize terrain
         const positions = planeGeometry.attributes.position.array;
         for (let i = 0; i < positions.length; i += 3) {
             positions[i + 2] = Math.random() * 3 - 1;
         }
         planeGeometry.attributes.position.needsUpdate = true;
         planeGeometry.computeVertexNormals();
+    
+        // Recreate grass with the updated terrain
         createGrass(camera);
     }
+    
 
     // Create Grass
     function createGrass(camera) {
-        const grassCount = 80000; // Reduced count for performance during testing
+        const grassCount = 40000; // Reduced count for performance during testing
         const grassHeight = 1.35;
         const grassWidthBase = 0.2;
         const grassWidthTop = 0.002;

@@ -56,7 +56,7 @@ function init() {
     document.addEventListener('mousemove', onMouseMove, false);
 
     const randomizeButton = document.createElement('button');
-    randomizeButton.textContent = 'Randomize Terrain';
+    randomizeButton.textContent = 'Generate Grass';
     randomizeButton.style.position = 'absolute';
     randomizeButton.style.top = '10px';
     randomizeButton.style.left = '10px';
