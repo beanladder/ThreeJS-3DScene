@@ -45,7 +45,6 @@ export function createScene() {
 
     // Function to randomize terrain
     function randomizeTerrain() {
-        // Remove previous grass mesh if it exists
         const previousGrassMesh = scene.getObjectByName('grassMesh');
         if (previousGrassMesh) {
             scene.remove(previousGrassMesh);
@@ -61,7 +60,6 @@ export function createScene() {
         planeGeometry.attributes.position.needsUpdate = true;
         planeGeometry.computeVertexNormals();
     
-        // Recreate grass with the updated terrain
         createGrass(camera);
     }
     
@@ -72,14 +70,13 @@ export function createScene() {
         const grassHeight = 1.35;
         const grassWidthBase = 0.2;
         const grassWidthTop = 0.002;
-    
-        // Load the textures
+
         const loader = new THREE.TextureLoader();
         const grassDiffuseTexture = loader.load('./grass_diffuse.jpg');
         const grassAlphaMaskTexture = loader.load('./grass.jpg');
         const grassAOTexture = loader.load('./grass_ao.jpg'); // Load the AO map
 
-        // Custom Shader for Ambient Occlusion
+        // Custom Shader for Ambient Occlusion and Vertex Movement
         const grassShaderMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 diffuseMap: { value: grassDiffuseTexture },
@@ -119,13 +116,12 @@ export function createScene() {
             side: THREE.DoubleSide,
         });
 
-        // Using the original MeshStandardMaterial
         const grassMaterial = new THREE.MeshStandardMaterial({
             map: grassDiffuseTexture,
             //alphaMap: grassAlphaMaskTexture,
             aoMap: grassAOTexture,
             aoMapIntensity: 1.0,
-            transparent: true,               // Enables transparency
+            transparent: true,               
             side: THREE.DoubleSide,
             roughness: 1.0,
             metalness: 0.1,
@@ -135,11 +131,8 @@ export function createScene() {
 
         const grasMaterial = grassShaderMaterial;
 
-        // Create plane geometry for grass blade
         const grassGeometry = new THREE.PlaneGeometry(grassWidthBase, grassHeight, 1, 1);
-    
-        // Modify the vertices to taper the grass towards the top
-        const position = grassGeometry.attributes.position;
+            const position = grassGeometry.attributes.position;
         for (let i = 0; i < position.count; i++) {
             const y = position.getY(i);
             const ratio = y / grassHeight;
@@ -181,7 +174,6 @@ export function createScene() {
         scene.add(grassMesh);
     }
     
-    // Initial randomization and add grass
     //randomizeTerrain();
     
     // Glowing Sphere
@@ -195,11 +187,9 @@ export function createScene() {
     sphere.position.y = 3;
     scene.add(sphere);
 
-    // Point Light (attached to the sphere, for glow)
+    // Point Light 
     const pointLight = new THREE.PointLight(0xffff80, 20, 40000);
     sphere.add(pointLight);
-
-    // Add stars with glow and circular effect
     const starCount = 15000;
     const starGeometry = new THREE.BufferGeometry();
     const starMaterial = new THREE.PointsMaterial({
@@ -224,8 +214,6 @@ export function createScene() {
         const z = radius * Math.cos(phi);
 
         starVertices.push(x, y, z);
-
-        // Add some color variation to stars
         const r = Math.random() * 0.3 + 0.7;
         const g = Math.random() * 0.3 + 0.7;
         const b = Math.random() * 0.3 + 0.7;
