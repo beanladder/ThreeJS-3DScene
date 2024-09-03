@@ -8,19 +8,19 @@ export function createScene() {
     camera.position.set(0, 8, 15);
 
     // Moon light
-    const moonLight1 = new THREE.DirectionalLight(0x4d79ff, 4.0);
+    const moonLight1 = new THREE.DirectionalLight(0x4d79ff, 2.0);
     moonLight1.position.set(5, 10, 5);
     scene.add(moonLight1);
 
-    const moonLight2 = new THREE.DirectionalLight(0x4d79ff, 4.0);
+    const moonLight2 = new THREE.DirectionalLight(0x4d79ff, 2.0);
     moonLight2.position.set(-5, 10, -5);
     scene.add(moonLight2);
 
-    const moonLight3 = new THREE.DirectionalLight(0x4d79ff, 4.0);
+    const moonLight3 = new THREE.DirectionalLight(0x4d79ff, 2.0);
     moonLight3.position.set(5, 10, -5);
     scene.add(moonLight3);
 
-    const moonLight4 = new THREE.DirectionalLight(0x4d79ff, 4.0);
+    const moonLight4 = new THREE.DirectionalLight(0x4d79ff, 2.0);
     moonLight4.position.set(5, 10, -5);
     scene.add(moonLight4);
 
@@ -65,11 +65,47 @@ export function createScene() {
         const loader = new THREE.TextureLoader();
         const grassDiffuseTexture = loader.load('./grass_diffuse.jpg');
         const grassAlphaMaskTexture = loader.load('./grass.jpg');
-    
-        // Create the custom grass material
+        const grassAOTexture = loader.load('./grass_ao.jpg'); // Load the AO map
+
+        // Custom Shader for Ambient Occlusion
+        const grassShaderMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                diffuseMap: { value: grassDiffuseTexture },
+                alphaMap: { value: grassAlphaMaskTexture },
+                aoMap: { value: grassAOTexture },
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D diffuseMap;
+                uniform sampler2D alphaMap;
+                uniform sampler2D aoMap;
+                varying vec2 vUv;
+
+                void main() {
+                    vec4 diffuseColor = texture2D(diffuseMap, vUv);
+                    float alpha = texture2D(alphaMap, vUv).r;
+                    float ao = texture2D(aoMap, vUv).r;
+                    vec4 finalColor = vec4(diffuseColor.rgb * ao, alpha);
+                    if (finalColor.a < 0.1) discard; // Discard pixels with low alpha
+                    gl_FragColor = finalColor;
+                }
+            `,
+            transparent: true,
+            side: THREE.DoubleSide,
+        });
+
+        // Using the original MeshStandardMaterial
         const grassMaterial = new THREE.MeshStandardMaterial({
             map: grassDiffuseTexture,
-            //alphaMap: grassAlphaMaskTexture, // Use the alpha mask texture
+            //alphaMap: grassAlphaMaskTexture,
+            aoMap: grassAOTexture,
+            aoMapIntensity: 1.0,
             transparent: true,               // Enables transparency
             side: THREE.DoubleSide,
             roughness: 1.0,
@@ -77,7 +113,9 @@ export function createScene() {
             emissive: new THREE.Color(0x0c210c),
             emissiveIntensity: 0.3
         });
-    
+
+        const grasMaterial = grassShaderMaterial;
+
         // Create plane geometry for grass blade
         const grassGeometry = new THREE.PlaneGeometry(grassWidthBase, grassHeight, 1, 1);
     
@@ -124,7 +162,6 @@ export function createScene() {
         scene.add(grassMesh);
     }
     
-
     // Initial randomization and add grass
     //randomizeTerrain();
     

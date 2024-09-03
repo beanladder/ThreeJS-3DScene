@@ -5,10 +5,11 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { createScene } from './scene-setup.js';
 import { createNoise2D } from 'simplex-noise';
+import { N8AOPass } from 'n8ao';
 
 let scene, camera, renderer, composer, sphere, plane, pointLight, raycaster, mouse, randomizeTerrain;
 let noise2D;
-let windEffect; // New variable for wind effect
+let windEffect; 
 
 function init() {
     const { scene: newScene, camera: newCamera, sphere: newSphere, plane: newPlane, pointLight: newPointLight, randomizeTerrain: newRandomizeTerrain } = createScene();
@@ -34,6 +35,9 @@ function init() {
     composer = new EffectComposer(renderer);
     const renderPass = new RenderPass(scene, camera);
     composer.addPass(renderPass);
+
+    const n8aoPass = new N8AOPass(scene, camera);
+    composer.addPass(n8aoPass);
 
     const bloomPass = new UnrealBloomPass(
         new THREE.Vector2(window.innerWidth, window.innerHeight),
@@ -171,6 +175,7 @@ function addWindEffect(scene) {
 
     return { animateWind };
 }
+
 init();
 
 window.addEventListener('resize', onWindowResize, false);
@@ -179,4 +184,10 @@ function onWindowResize() {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
     composer.setSize(window.innerWidth, window.innerHeight);
+
+    // Update n8ao SSAO pass size
+    const n8aoPass = composer.passes.find(pass => pass instanceof N8AOPass);
+    if (n8aoPass) {
+        n8aoPass.setSize(window.innerWidth, window.innerHeight);
+    }
 }
