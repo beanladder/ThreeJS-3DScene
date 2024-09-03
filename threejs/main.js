@@ -6,6 +6,9 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { createScene } from './scene-setup.js';
 import { createNoise2D } from 'simplex-noise';
 import { N8AOPass } from 'n8ao';
+import { MeshLine, MeshLineMaterial } from 'three.meshline';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
 
 let scene, camera, renderer, composer, sphere, plane, pointLight, raycaster, mouse, randomizeTerrain;
 let noise2D;
@@ -66,6 +69,29 @@ function init() {
     // Add wind effect
     windEffect = addWindEffect(scene);
 
+    const loader = new GLTFLoader();
+loader.load(
+    './tree/scene.gltf', // Replace with the path to your model file
+    function (gltf) {
+        const model1 = gltf.scene.clone();
+        model1.position.set(9, 0.1, 9); // Set position for the first tree
+        model1.scale.set(0.05, 0.06, 0.05); // Scale model if necessary
+        model1.name = 'tree1'; // Give the first tree a unique name
+        scene.add(model1); // Add the first tree to the scene
+
+        const model2 = gltf.scene.clone();
+        model2.position.set(-11, 0.1, -9); // Set position for the second tree
+        model2.scale.set(0.05, 0.06, 0.05); // Scale model if necessary
+        model2.name = 'tree2'; // Give the second tree a unique name
+        scene.add(model2); // Add the second tree to the scene
+    },
+    undefined,
+    function (error) {
+        console.error('An error happened while loading the model:', error);
+    }
+);
+
+
     animate();
 }
 
@@ -81,6 +107,21 @@ function onMouseMove(event) {
         sphere.position.x = intersectPoint.x;
         sphere.position.z = intersectPoint.z;
         sphere.position.y = intersectPoint.y + 3; // Keep the sphere slightly higher
+    }
+}
+
+function updateTreeSway(time) {
+    const tree1 = scene.getObjectByName('tree1');
+    const tree2 = scene.getObjectByName('tree2');
+
+    if (tree1) {
+        const sway1 = noise2D(tree1.position.x * 0.1, time * 0.0005) * 0.01;
+        tree1.rotation.z = sway1; // Apply rotation based on noise
+    }
+
+    if (tree2) {
+        const sway2 = noise2D(tree2.position.x * 0.1, time * 0.0005) * 0.01;
+        tree2.rotation.z = sway2; // Apply rotation based on noise
     }
 }
 
@@ -111,11 +152,12 @@ function updateGrassOrientation(time) {
         grassMesh.instanceMatrix.needsUpdate = true;
     }
 }
-
+//MAIN SHIT IS HERE
 function animate() {
     requestAnimationFrame(animate);
     const time = performance.now();
     updateGrassOrientation(time);
+    updateTreeSway(time); // Update tree sway
     windEffect.animateWind(); // Animate wind effect
     composer.render();
 }
@@ -135,23 +177,26 @@ function addWindEffect(scene) {
     const lines = [];
 
     for (let i = 0; i < lineCount; i++) {
-        const lineGeometry = new THREE.BufferGeometry();
-        const lineMaterial = new THREE.LineBasicMaterial({
-            color: 0xffffff,
+        const lineMaterial = new MeshLineMaterial({
+            color: new THREE.Color(0xffffff),
+            lineWidth: 0.2, // Adjust this value to change the thickness of the line
             transparent: true,
             opacity: 1,
             blending: THREE.AdditiveBlending
         });
-        const line = new THREE.Line(lineGeometry, lineMaterial);
-        scene.add(line);
-        lines.push(line);
+        const line = new MeshLine();
+        const points = curve.getPoints(lineLength);
+        line.setPoints(points);
+        const mesh = new THREE.Mesh(line, lineMaterial);
+        scene.add(mesh);
+        lines.push({ mesh, line });
     }
 
     function animateWind() {
         const time = Date.now() * 0.001;
         const looptime = 10; // 10 seconds for a complete loop
 
-        lines.forEach((line, index) => {
+        lines.forEach(({ mesh, line }, index) => {
             const t = ((time + index * 0.5) % looptime) / looptime;
             const startT = t;
             const endT = (t + lineLength / 200) % 1; // 200 is the total number of points on the curve
@@ -161,15 +206,15 @@ function addWindEffect(scene) {
                 const segmentT = (startT + (endT - startT) * (i / lineLength)) % 1;
                 const point = curve.getPoint(segmentT);
                 point.y += Math.sin((segmentT + index * 0.1) * Math.PI * 2) * 0.5; // Add some vertical movement
-                points.push(point);
+                points.push(point.x, point.y, point.z);
             }
 
-            line.geometry.setFromPoints(points);
-            line.geometry.attributes.position.needsUpdate = true;
+            line.setPoints(points);
+            mesh.geometry = line.geometry;
 
             // Fade the line based on its position
             const opacity = Math.sin(t * Math.PI) * 0.5 + 0.5;
-            line.material.opacity = opacity;
+            mesh.material.opacity = 0.5;
         });
     }
 
@@ -185,7 +230,6 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     composer.setSize(window.innerWidth, window.innerHeight);
 
-    // Update n8ao SSAO pass size
     const n8aoPass = composer.passes.find(pass => pass instanceof N8AOPass);
     if (n8aoPass) {
         n8aoPass.setSize(window.innerWidth, window.innerHeight);
